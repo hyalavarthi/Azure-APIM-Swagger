@@ -64,7 +64,7 @@ stages:
         PathtoPublish: Infrastructure
         ArtifactName: Infrastructure  
 
-    - task: TerraformInstaller@0
+    - task: terraformInstaller@0
       inputs:
         terraformVersion: 'latest'
     
@@ -98,7 +98,7 @@ stages:
       displayName: Download DeploymentPackage
       artifact: drop  
   
-    - task: TerraformInstaller@0
+    - task: terraformInstaller@0
       inputs:
         terraformVersion: 'latest'
   
