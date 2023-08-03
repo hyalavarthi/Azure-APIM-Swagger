@@ -1,1 +1,1 @@
-AZURE APIM Swagger
+AZURE APIM Swagger UI
