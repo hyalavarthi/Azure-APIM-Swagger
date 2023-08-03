@@ -4,7 +4,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
 
 trigger:
-- master
+- main
 
 pool:
   vmImage: 'windows-latest'
@@ -51,7 +51,7 @@ stages:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)'
         ArtifactName: 'drop'
       condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))  
-    
+
   - job: BuildInfrastructure
     dependsOn:
       - BuildCode
@@ -62,31 +62,32 @@ stages:
       displayName: 'Publish Artifacts'
       inputs:
         PathtoPublish: Infrastructure
-        ArtifactName: Infrastructure
-    - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
-      displayName: Install terraform version $(terraformVersion)
-      inputs:
-        terraformVersion: $(terraformVersion)
-    - task: TerraformCLI@0
-      displayName: terraform init
-      inputs:
-        command: init
-        commandOptions: -backend=false
-        workingDirectory: '$(Build.SourcesDirectory)\Infrastructure'
+        ArtifactName: Infrastructure  
 
-    - task: TerraformCLI@0
-      displayName: terraform validate
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
       inputs:
-        command: validate
-        workingDirectory: '$(Build.SourcesDirectory)\Infrastructure'
+        terraformVersion: 'latest'
+    
+    - task: TerraformCLI@0
+      inputs:
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\Infrastructure'
+        commandOptions: '-backend=false'
+        allowTelemetryCollection: false
+        
+    - task: TerraformCLI@0
+      inputs:
+        command: 'validate'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\Infrastructure'
+        allowTelemetryCollection: false
+    
 - stage: Deploy
   displayName: Deploy
   jobs:
   - job: Deploy
     pool:
       vmImage: 'windows-latest'
-    variables:
-    - group: terraform-vars    
+     
     steps:
     - checkout: none
     - download: current
@@ -95,44 +96,48 @@ stages:
     - download: current
       displayName: Download DeploymentPackage
       artifact: drop  
-    - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
-      displayName: Install terraform version $(terraformVersion)
+  
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+      displayName: Install terraform version
       inputs:
-        terraformVersion: $(terraformVersion)      
+        terraformVersion: 'latest'
+  
 
-    - task: DownloadSecureFile@1
-      displayName: DownloadSecureFile
-      inputs:
-        secureFile: 'terraform.tfvars'
-        retryCount: 5
+    
     - task: TerraformCLI@0
-      displayName: terraform init
       inputs:
-        command: init
-        workingDirectory: $(Pipeline.Workspace)/Infrastructure              
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\Infrastructure'
         backendType: 'azurerm'
-        backendServiceArm: 'vs-subscription'
-        backendAzureRmResourceGroupName: $(storage_account_resource_group_name)
-        backendAzureRmStorageAccountName: $(storage_account_name)
+        backendServiceArm: 'webapitesting'
+        backendAzureRmSubscriptionId: '672a6f62-7924-4df6-83d4-51ca2bb0d99c'
+        backendAzureRmResourceGroupName: 'RG-Practise-Cloud'
+        backendAzureRmStorageAccountName: 'terraformstorageconnect'
         backendAzureRmContainerName: 'tfstate'
-        backendAzureRmKey: 'apim.terraform.tfstate' 
+        backendAzureRmKey: 'terraform.tfstate'
+        allowTelemetryCollection: false
+    
     - task: TerraformCLI@0
-      displayName: terraform plan
       inputs:
-        command: plan
-        environmentServiceName: 'vs-subscription'
-        workingDirectory: $(Pipeline.Workspace)/Infrastructure  
+        command: 'plan'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\Infrastructure'
+        environmentServiceName: 'webapitesting'
+        providerAzureRmSubscriptionId: '672a6f62-7924-4df6-83d4-51ca2bb0d99c'
+        commandOptions: '-out=changes.tfplan -var-file=$(DownloadSecureFile.secureFilePath)-var "deployment_package_path=$(Pipeline.Workspace)/drop/api.zip" -var publisher_email=$(publisher_email)'
+        allowTelemetryCollection: true
         publishPlanResults: 'infrastructure'
-        commandOptions: >
-          -out=changes.tfplan -var-file=$(DownloadSecureFile.secureFilePath) 
-          -var "deployment_package_path=$(Pipeline.Workspace)/drop/api.zip"      
-          -var publisher_email=$(publisher_email)   
-                     
+    
     - task: TerraformCLI@0
-      displayName: terraform apply
       inputs:
-        command: apply
-        environmentServiceName: 'vs-subscription'
-        workingDirectory: $(Pipeline.Workspace)/Infrastructure                
-        commandOptions: >
-          changes.tfplan      
+        command: 'apply'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\Infrastructure'
+        environmentServiceName: 'webapitesting'
+        providerAzureRmSubscriptionId: '672a6f62-7924-4df6-83d4-51ca2bb0d99c'
+        commandOptions: 'changes.tfplan'
+        allowTelemetryCollection: true
+    
+    
+    
+
+
+        
