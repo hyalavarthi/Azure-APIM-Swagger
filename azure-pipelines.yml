@@ -51,4 +51,96 @@ stages:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)'
         ArtifactName: 'drop'
       condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))  
-   
+
+  - job: BuildInfrastructure
+    dependsOn:
+      - BuildCode
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifacts'
+      inputs:
+        PathtoPublish: Infrastructure
+        ArtifactName: Infrastructure  
+
+    - task: TerraformInstaller@0
+      inputs:
+        terraformVersion: 'latest'
+    
+    - task: TerraformCLI@0
+      inputs:
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\Infrastructure'
+        commandOptions: '-backend=false'
+        allowTelemetryCollection: false
+        
+    - task: TerraformCLI@0
+      inputs:
+        command: 'validate'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\Infrastructure'
+        allowTelemetryCollection: false
+    
+- stage: Deploy
+  displayName: Deploy
+  jobs:
+  - job: Deploy
+    pool:
+      vmImage: 'windows-latest'
+    variables:
+    - group: terraform-vars    
+    steps:
+    - checkout: none
+    - download: current
+      displayName: Download infrastructure
+      artifact: Infrastructure
+    - download: current
+      displayName: Download DeploymentPackage
+      artifact: drop  
+  
+    - task: TerraformInstaller@0
+      inputs:
+        terraformVersion: 'latest'
+  
+    - task: DownloadSecureFile@1
+      inputs:
+        secureFile: 'terraform.tfvars'
+        retryCount: 5
+    
+    - task: TerraformCLI@0
+      inputs:
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\Infrastructure'
+        backendType: 'azurerm'
+        backendServiceArm: 'webapitesting'
+        backendAzureRmSubscriptionId: '672a6f62-7924-4df6-83d4-51ca2bb0d99c'
+        backendAzureRmResourceGroupName: 'RG-Practise-Cloud'
+        backendAzureRmStorageAccountName: 'terraformstorageconnect'
+        backendAzureRmContainerName: 'tfstate'
+        backendAzureRmKey: 'terraform.tfstate'
+        allowTelemetryCollection: false
+    
+    - task: TerraformCLI@0
+      inputs:
+        command: 'plan'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\Infrastructure'
+        environmentServiceName: 'webapitesting'
+        providerAzureRmSubscriptionId: '672a6f62-7924-4df6-83d4-51ca2bb0d99c'
+        commandOptions: '-out=changes.tfplan -var-file=$(DownloadSecureFile.secureFilePath)-var "deployment_package_path=$(Pipeline.Workspace)/drop/api.zip" -var publisher_email=$(publisher_email)'
+        allowTelemetryCollection: true
+        publishPlanResults: 'infrastructure'
+    
+    - task: TerraformCLI@0
+      inputs:
+        command: 'apply'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\Infrastructure'
+        environmentServiceName: 'webapitesting'
+        providerAzureRmSubscriptionId: '672a6f62-7924-4df6-83d4-51ca2bb0d99c'
+        commandOptions: 'changes.tfplan'
+        allowTelemetryCollection: true
+    
+    
+    
+
+
+        
