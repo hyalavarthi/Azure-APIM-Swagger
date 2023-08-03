@@ -2,7 +2,7 @@
 api/.vs
 api/bin
 api/obj
-
+.docs*
 
 #Terraform
 .terraform*
