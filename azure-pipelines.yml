@@ -4,7 +4,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
 
 trigger:
-- master
+- main
 
 pool:
   vmImage: 'windows-latest'
@@ -45,94 +45,3 @@ stages:
         arguments: ' --no-build --configuration $(buildConfiguration) -o $(Build.ArtifactStagingDirectory)'
       condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
     
-    - task: PublishBuildArtifacts@1
-      displayName: Publish Build Artifacts
-      inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-        ArtifactName: 'drop'
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))  
-    
-  - job: BuildInfrastructure
-    dependsOn:
-      - BuildCode
-    pool:
-      vmImage: 'windows-latest'
-    steps:
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish Artifacts'
-      inputs:
-        PathtoPublish: Infrastructure
-        ArtifactName: Infrastructure
-    - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
-      displayName: Install terraform version $(terraformVersion)
-      inputs:
-        terraformVersion: $(terraformVersion)
-    - task: TerraformCLI@0
-      displayName: terraform init
-      inputs:
-        command: init
-        commandOptions: -backend=false
-        workingDirectory: '$(Build.SourcesDirectory)\Infrastructure'
-
-    - task: TerraformCLI@0
-      displayName: terraform validate
-      inputs:
-        command: validate
-        workingDirectory: '$(Build.SourcesDirectory)\Infrastructure'
-- stage: Deploy
-  displayName: Deploy
-  jobs:
-  - job: Deploy
-    pool:
-      vmImage: 'windows-latest'
-    variables:
-    - group: terraform-vars    
-    steps:
-    - checkout: none
-    - download: current
-      displayName: Download infrastructure
-      artifact: Infrastructure
-    - download: current
-      displayName: Download DeploymentPackage
-      artifact: drop  
-    - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
-      displayName: Install terraform version $(terraformVersion)
-      inputs:
-        terraformVersion: $(terraformVersion)      
-
-    - task: DownloadSecureFile@1
-      displayName: DownloadSecureFile
-      inputs:
-        secureFile: 'terraform.tfvars'
-        retryCount: 5
-    - task: TerraformCLI@0
-      displayName: terraform init
-      inputs:
-        command: init
-        workingDirectory: $(Pipeline.Workspace)/Infrastructure              
-        backendType: 'azurerm'
-        backendServiceArm: 'vs-subscription'
-        backendAzureRmResourceGroupName: $(storage_account_resource_group_name)
-        backendAzureRmStorageAccountName: $(storage_account_name)
-        backendAzureRmContainerName: 'tfstate'
-        backendAzureRmKey: 'apim.terraform.tfstate' 
-    - task: TerraformCLI@0
-      displayName: terraform plan
-      inputs:
-        command: plan
-        environmentServiceName: 'vs-subscription'
-        workingDirectory: $(Pipeline.Workspace)/Infrastructure  
-        publishPlanResults: 'infrastructure'
-        commandOptions: >
-          -out=changes.tfplan -var-file=$(DownloadSecureFile.secureFilePath) 
-          -var "deployment_package_path=$(Pipeline.Workspace)/drop/api.zip"      
-          -var publisher_email=$(publisher_email)   
-                     
-    - task: TerraformCLI@0
-      displayName: terraform apply
-      inputs:
-        command: apply
-        environmentServiceName: 'vs-subscription'
-        workingDirectory: $(Pipeline.Workspace)/Infrastructure                
-        commandOptions: >
-          changes.tfplan      
