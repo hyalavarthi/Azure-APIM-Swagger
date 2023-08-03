@@ -5,9 +5,6 @@
 
 trigger:
 - main
-- task: TerraformInstaller@1
-  inputs:
-    terraformVersion: 'latest'
 
 pool:
   vmImage: 'windows-latest'
@@ -66,6 +63,7 @@ stages:
       inputs:
         PathtoPublish: Infrastructure
         ArtifactName: Infrastructure
+
     - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
       displayName: Install terraform version $(terraformVersion)
       inputs:
