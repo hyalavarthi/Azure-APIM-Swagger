@@ -61,7 +61,7 @@ data "azurerm_storage_account_sas" "package" {
 resource "azurerm_app_service" "swagger_demo_app" {
   location            = var.location
   resource_group_name = var.resource_group_name
-  app_service_plan_id = module.appserviceplan.app_service_plan_id
+  app_service_plan_id = var.app_service_plan_id
   name                = "swagger-${var.suffix}"  
   tags                = var.common_tags
   app_settings = {

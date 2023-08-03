@@ -21,7 +21,7 @@ variable "suffix" {
 
 variable "resourcegroup_name" {
   type    = string
-  default = "apim-demo-rg"
+  default = "RG-AU-CloudTeam-POC"
 }
 
 variable "location" {
@@ -35,5 +35,5 @@ variable "common_tags" {
 }
 variable "deployment_package_path" {}
 variable "publisher_email" {
-  default = "test@gmail.com"
+  default = "hrushikesh.yalavarthi@outlook.com"
 }
