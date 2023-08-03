@@ -3,8 +3,11 @@
 # Add steps that publish symbols, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
 
-trigger:
-- master
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 pool:
   vmImage: 'windows-latest'
