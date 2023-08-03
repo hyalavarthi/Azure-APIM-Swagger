@@ -87,8 +87,7 @@ stages:
   - job: Deploy
     pool:
       vmImage: 'windows-latest'
-    variables:
-    - group: terraform-vars    
+     
     steps:
     - checkout: none
     - download: current
@@ -103,10 +102,7 @@ stages:
       inputs:
         terraformVersion: 'latest'
   
-    - task: DownloadSecureFile@1
-      inputs:
-        secureFile: 'terraform.tfvars'
-        retryCount: 5
+
     
     - task: TerraformCLI@0
       inputs:
