@@ -34,14 +34,7 @@ data "azurerm_storage_account_sas" "package" {
   expiry = formatdate("YYYY-MM-DD", local.sas_expiry_date)
 
   permissions {
-    read    = true
-    add     = false
-    create  = false
-    delete  = false
-    list    = false
-    process = false
-    update  = false
-    write   = false
+    blob = "r"
   }
 
   resource_types {
