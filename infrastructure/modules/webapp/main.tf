@@ -21,46 +21,42 @@ resource "azurerm_storage_blob" "package" {
   source                 = var.deployment_package_path
 }
 
-locals {
-  sas_start_time  = "2023-08-04T00:00:00Z"
-  sas_duration    = duration("876000h") # Equivalent to 100 years (100 * 365 * 24 hours)
-  sas_expiry_date = timeadd(local.sas_start_time, local.sas_duration)
-}
+
 
 data "azurerm_storage_account_sas" "package" {
   connection_string = azurerm_storage_account.swagger_demo_app.primary_connection_string
   https_only        = true
-
-  start  = formatdate("YYYY-MM-DD", local.sas_start_time)
-  expiry = formatdate("YYYY-MM-DD", local.sas_expiry_date)
-
-  permissions {
-    tag = false
-    filter = false
-    read    = true
-    add     = false
-    create  = false
-    delete  = false
-    list    = false
-    process = false
-    update  = false
-    write   = true
-  }
+  signed_version    = "2017-07-29"
 
   resource_types {
-    object    = true
+    service   = true
     container = false
-    service   = false
+    object    = false
   }
 
   services {
     blob  = true
-    file  = false
     queue = false
     table = false
+    file  = false
   }
-}
 
+  start  = "2018-03-21T00:00:00Z"
+  expiry = "2020-03-21T00:00:00Z"
+
+  permissions {
+    read    = true
+    write   = true
+    delete  = false
+    list    = false
+    add     = true
+    create  = true
+    update  = false
+    process = false
+    tag     = false
+    filter  = false
+    }
+}
 
 resource "azurerm_app_service" "swagger_demo_app" {
   location            = var.location
