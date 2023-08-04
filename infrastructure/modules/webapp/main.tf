@@ -37,6 +37,7 @@ data "azurerm_storage_account_sas" "package" {
    
 
   permissions {
+    tag = "required"
     read    = true
     add     = false
     create  = false
