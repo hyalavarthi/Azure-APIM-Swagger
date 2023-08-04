@@ -37,8 +37,15 @@ data "azurerm_storage_account_sas" "package" {
    
 
   permissions {
-    blob = "r"
-    tag  = false
+    tag = "false"
+    read    = true
+    add     = false
+    create  = false
+    delete  = false
+    list    = false
+    process = false
+    update  = false
+    write   = false
   }
 
   
