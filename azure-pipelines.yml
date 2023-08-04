@@ -107,6 +107,10 @@ stages:
         secureFile: 'terraform.tfvars'
         retryCount: '5'
     
+    - task: CmdLine@2
+      inputs:
+        script: 'mv ''$(Agent.TempDirectory)/terraform.tfvars'' ''./terraform.tfvars'''
+    
     - task: TerraformCLI@0
       inputs:
         command: 'init'
