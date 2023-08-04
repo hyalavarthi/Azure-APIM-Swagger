@@ -22,8 +22,9 @@ resource "azurerm_storage_blob" "package" {
 }
 
 locals {
-  sas_start_time  = "2021-01-01T00:00:00Z"
-  sas_expiry_date = timeadd(local.sas_start_time, "${100 * 365 * 24}h")
+  sas_start_time  = "2023-08-04T00:00:00Z"
+  sas_duration    = duration("876000h") # Equivalent to 100 years (100 * 365 * 24 hours)
+  sas_expiry_date = timeadd(local.sas_start_time, local.sas_duration)
 }
 
 data "azurerm_storage_account_sas" "package" {
@@ -33,12 +34,9 @@ data "azurerm_storage_account_sas" "package" {
   start  = formatdate("YYYY-MM-DD", local.sas_start_time)
   expiry = formatdate("YYYY-MM-DD", local.sas_expiry_date)
 
-  
-   
-
   permissions {
-    tag = "false"
-    filter = {}
+    tag = false
+    filter = false
     read    = true
     add     = false
     create  = false
@@ -46,10 +44,8 @@ data "azurerm_storage_account_sas" "package" {
     list    = false
     process = false
     update  = false
-    write   = false
+    write   = true
   }
-
-  
 
   resource_types {
     object    = true
@@ -63,8 +59,8 @@ data "azurerm_storage_account_sas" "package" {
     queue = false
     table = false
   }
-
 }
+
 
 resource "azurerm_app_service" "swagger_demo_app" {
   location            = var.location
