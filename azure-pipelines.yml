@@ -102,7 +102,10 @@ stages:
       inputs:
         terraformVersion: $(terraformVersion)
   
-
+    - task: DownloadSecureFile@1
+      inputs:
+        secureFile: 'terraform.tfvars'
+        retryCount: '5'
     
     - task: TerraformCLI@0
       inputs:
@@ -115,7 +118,7 @@ stages:
         backendAzureRmStorageAccountName: 'terraformstorageconnect'
         backendAzureRmContainerName: 'tfstate'
         backendAzureRmKey: 'terraform.tfstate'
-        allowTelemetryCollection: false
+        allowTelemetryCollection: true
     
     - task: TerraformCLI@0
       inputs:
@@ -123,7 +126,7 @@ stages:
         workingDirectory: '$(System.DefaultWorkingDirectory)\Infrastructure'
         environmentServiceName: 'webapitesting'
         providerAzureRmSubscriptionId: '672a6f62-7924-4df6-83d4-51ca2bb0d99c'
-        commandOptions: '-out=changes.tfplan -var-file=$(DownloadSecureFile.secureFilePath)-var "deployment_package_path=$(Pipeline.Workspace)/drop/api.zip" -var publisher_email=$(publisher_email)'
+        commandOptions: '-out=changes.tfplan -var-file=$(DownloadSecureFile.secureFilePath)-var "deployment_package_path=$(Pipeline.Workspace)/drop/deploy.zip" -var publisher_email=$(publisher_email)'
         allowTelemetryCollection: true
         publishPlanResults: 'infrastructure'
     
