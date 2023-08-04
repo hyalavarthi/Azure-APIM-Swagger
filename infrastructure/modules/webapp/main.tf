@@ -33,8 +33,25 @@ data "azurerm_storage_account_sas" "package" {
   start  = formatdate("YYYY-MM-DD", local.sas_start_time)
   expiry = formatdate("YYYY-MM-DD", local.sas_expiry_date)
 
+  
+    data "azurerm_storage_account_sas" "package" {
+  connection_string = azurerm_storage_account.swagger_demo_app.primary_connection_string
+  https_only        = true
+
+  start  = formatdate("YYYY-MM-DD", local.sas_start_time)
+  expiry = formatdate("YYYY-MM-DD", local.sas_expiry_date)
+
   permissions {
-    blob = "r"
+    read    = true
+    add     = false
+    create  = false
+    delete  = false
+    list    = false
+    process = false
+    update  = false
+    write   = false
+  }
+
   }
 
   resource_types {
