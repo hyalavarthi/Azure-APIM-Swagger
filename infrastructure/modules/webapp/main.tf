@@ -47,7 +47,7 @@ data "azurerm_storage_account_sas" "package" {
     write   = false
   }
 
-  }
+  
 
   resource_types {
     object    = true
@@ -61,6 +61,7 @@ data "azurerm_storage_account_sas" "package" {
     queue = false
     table = false
   }
+
 }
 
 resource "azurerm_app_service" "swagger_demo_app" {
